@@ -3,18 +3,24 @@ import json
 import re
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey"  # Needed for flash messages
+app.secret_key = "supersecretkey"  # needed for flash messages
+
+# -------------------------
+# Constants
+# -------------------------
+MIN_AGE = 5
+MAX_AGE = 13
 
 # -------------------------
 # Validation functions
 # -------------------------
 def validate_email(email):
-    if not email:
-        return True  # Optional secondary email
+    if not email:  # secondary email can be empty
+        return True
     return re.match(r"[^@]+@[^@]+\.[^@]+", email)
 
 def validate_phone(phone):
-    return re.match(r"^\d{10}$", phone)  # 10-digit phone number
+    return re.match(r"^\d{10}$", phone)  # simple 10-digit check
 
 # -------------------------
 # Routes
@@ -25,12 +31,29 @@ def form():
 
 @app.route("/register", methods=["POST"])
 def register():
+    # Get form data
+    age_str = request.form.get("age")
+    try:
+        age = int(age_str)
+    except (ValueError, TypeError):
+        flash("Invalid age.")
+        return redirect(url_for("form"))
+
+    # Age restrictions
+    if age < MIN_AGE:
+        flash("Too young — cannot apply.")
+        return redirect(url_for("form"))
+    elif age > MAX_AGE:
+        flash("Too old — registration closed.")
+        return redirect(url_for("form"))
+
+    # Build registration dict
     data = {
         "Child": {
             "Name": request.form.get("childName"),
             "Gender": request.form.get("gender"),
             "Date of Birth": request.form.get("dob"),
-            "Age": request.form.get("age"),
+            "Age": age,
             "Allergies": request.form.get("allergies")
         },
         "Father's Name": request.form.get("fatherName"),
@@ -51,31 +74,36 @@ def register():
         "Electronic Signature": request.form.get("signature")
     }
 
-    # -------------------------
-    # Validate required fields
-    # -------------------------
+    # Validate emails
     if not validate_email(data["Email Address 1"]):
         flash("Primary email is invalid.")
         return redirect(url_for("form"))
+    if not validate_email(data["Email Address 2"]):
+        flash("Secondary email is invalid.")
+        return redirect(url_for("form"))
 
-    for phone_field in ["Father's Phone", "Mother's Phone", "Emergency Contact 1 Phone", "Emergency Contact 2 Phone"]:
-        if not validate_phone(data[phone_field]):
-            flash(f"{phone_field} must be 10 digits.")
+    # Validate phone numbers
+    for field in ["Father's Phone", "Mother's Phone", "Emergency Contact 1 Phone", "Emergency Contact 2 Phone"]:
+        if not validate_phone(data[field]):
+            flash(f"{field} must be 10 digits.")
             return redirect(url_for("form"))
 
-    # -------------------------
-    # Save to registration.json
-    # -------------------------
+    # Load existing registrations safely
     try:
         with open("registration.json", "r") as f:
             registrations = json.load(f)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         registrations = []
 
     registrations.append(data)
 
-    with open("registration.json", "w") as f:
-        json.dump(registrations, f, indent=4)
+    # Save registrations safely
+    try:
+        with open("registration.json", "w") as f:
+            json.dump(registrations, f, indent=4)
+    except Exception as e:
+        flash(f"Failed to save registration: {e}")
+        return redirect(url_for("form"))
 
     flash("Registration submitted successfully!")
     return redirect(url_for("form"))
