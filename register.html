@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WEIC Sunday School Registration 2025–26</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f4f4;
+            padding: 20px;
+        }
+        h2 {
+            background: #00695c;
+            color: white;
+            padding: 10px;
+        }
+        .section {
+            background: white;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input, select {
+            width: 100%;
+            padding: 6px;
+            margin-top: 4px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px 15px;
+            background: #00695c;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #004d40;
+        }
+        #age-message {
+            color: red;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+        #assigned-level {
+            margin-top: 10px;
+            font-weight: bold;
+            color: green;
+        }
+    </style>
+</head>
+<body>
+
+<h1>WEIC Sunday School Registration Form 2025–26</h1>
+
+<form method="POST">
+
+    <div class="section">
+        <h2>Child Information</h2>
+
+        <label>Child Name *</label>
+        <input type="text" name="childName" id="childName" required>
+
+        <label>Gender *</label>
+        <select name="gender" id="gender" required>
+            <option value="">Select</option>
+            <option>Male</option>
+            <option>Female</option>
+        </select>
+
+        <label>Date of Birth *</label>
+        <input type="date" name="dob" id="dob" required>
+
+        <label>Age *</label>
+        <input type="number" name="age" id="age" readonly required>
+        <p id="age-message"></p>
+
+        <label>Allergies</label>
+        <input type="text" name="allergies" id="allergies">
+    </div>
+
+    <div class="section">
+        <h2>Parent Information</h2>
+
+        <label>Father's Name *</label>
+        <input type="text" name="fatherName" required>
+
+        <label>Mother's Name *</label>
+        <input type="text" name="motherName" required>
+
+        <label>Mailing Address *</label>
+        <input type="text" name="address" required>
+
+        <label>Email Address *</label>
+        <input type="email" name="email1" required>
+
+        <label>Secondary Email</label>
+        <input type="email" name="email2">
+
+        <label>Father's Phone *</label>
+        <input type="tel" name="fatherPhone" required>
+
+        <label>Mother's Phone *</label>
+        <input type="tel" name="motherPhone" required>
+    </div>
+
+    <div class="section">
+        <h2>Emergency Contacts</h2>
+
+        <label>Emergency Contact 1 Name *</label>
+        <input type="text" name="emergency1Name" required>
+
+        <label>Emergency Contact 1 Phone *</label>
+        <input type="tel" name="emergency1Phone" required>
+
+        <label>Emergency Contact 2 Name *</label>
+        <input type="text" name="emergency2Name" required>
+
+        <label>Emergency Contact 2 Phone *</label>
+        <input type="tel" name="emergency2Phone" required>
+    </div>
+
+    <div class="section">
+        <h2>Permissions & Agreements</h2>
+
+        <label>Photo/Video Consent *</label>
+        <select name="photoConsent" required>
+            <option value="">Select</option>
+            <option>Yes</option>
+            <option>No</option>
+        </select>
+
+        <label>Pickup Authorization *</label>
+        <select name="pickupConsent" required>
+            <option value="">Select</option>
+            <option>Yes</option>
+            <option>No</option>
+        </select>
+
+        <label>Liability Release *</label>
+        <select name="liability" required>
+            <option value="">Select</option>
+            <option>Yes</option>
+            <option>No</option>
+        </select>
+
+        <label>Scholarship Requested *</label>
+        <select name="scholarship" required>
+            <option value="">Select</option>
+            <option>Yes</option>
+            <option>No</option>
+        </select>
+
+        <label>Electronic Signature *</label>
+        <input type="text" name="signature" required>
+    </div>
+
+    <button type="submit">Submit Registration</button>
+
+</form>
+
+<div id="assigned-level"></div>
+
+<script>
+const dobInput = document.getElementById("dob");
+const ageInput = document.getElementById("age");
+const submitButton = document.querySelector("button[type='submit']");
+const ageMessage = document.getElementById("age-message");
+const form = document.querySelector("form");
+const assignedDiv = document.getElementById("assigned-level");
+
+// Age calculation + validation
+dobInput.addEventListener("change", function () {
+    const dob = new Date(this.value);
+    const today = new Date();
+
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+
+    ageInput.value = age;
+
+    if (age < 5) {
+        ageMessage.textContent = "Too young — cannot register!";
+        ageInput.style.borderColor = "red";
+        submitButton.disabled = true;
+    } else if (age > 13) {
+        ageMessage.textContent = "Too old — registration closed!";
+        ageInput.style.borderColor = "red";
+        submitButton.disabled = true;
+    } else {
+        ageMessage.textContent = "";
+        ageInput.style.borderColor = "";
+        submitButton.disabled = false;
+    }
+});
+
+// Submit form via JSON
+form.addEventListener("submit", function(e) {
+    e.preventDefault();
+
+    const data = {
+        "Children": [
+            {
+                "Name": document.getElementById("childName").value,
+                "Age": document.getElementById("age").value
+            }
+        ]
+    };
+
+    fetch("/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(res => {
+        alert(res.message);
+
+        if (res.levels) {
+            const childName = data.Children[0].Name;
+            let assignedLevel = "";
+            for (const [level, names] of Object.entries(res.levels)) {
+                if (names.includes(childName)) {
+                    assignedLevel = level;
+                    break;
+                }
+            }
+            assignedDiv.textContent = `Assigned Level: ${assignedLevel}`;
+        } else {
+            assignedDiv.textContent = ""; // clear if no level
+        }
+    })
+    .catch(err => {
+        alert(err.message || "Error submitting form");
+    });
+});
+</script>
+
+</body>
+</html>
