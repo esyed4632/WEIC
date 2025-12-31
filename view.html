@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Registered Levels</title>
+<style>
+body { font-family: Arial; padding: 20px; }
+h1 { background: #00695c; color: white; padding: 10px; }
+ul { margin-bottom: 20px; }
+</style>
+</head>
+<body>
+<h1>Registered Kids by Level</h1>
+{% for level,kids in levels.items() %}
+<h2>{{ level }}</h2>
+<ul>
+{% for kid in kids %}
+<li>{{ kid }}</li>
+{% else %}
+<li>No registrations yet</li>
+{% endfor %}
+</ul>
+{% endfor %}
+</body>
+</html>
